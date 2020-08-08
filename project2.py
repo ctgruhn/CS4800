@@ -3,6 +3,7 @@ from nltk.corpus import stopwords, reuters
 from nltk.tokenize import word_tokenize
 from nltk.probability import FreqDist
 from nltk.stem import WordNetLemmatizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 stop_words = set(stopwords.words("english"))
 
@@ -32,8 +33,11 @@ def term_frequency(text):
     return freq_distribution
 # TODO: Doc freq for each term
 # TODO: TF-IDF Calc
-def tf_idf():
-    pass
+def tf_idf(doc):
+    tfidf = TfidfVectorizer()
+    text_tf = tfidf.fit_transform(doc)
+    return text_tf
+    
 # TODO: One more weight system
 # TODO: Analyze Queries
 # TODO: Calculate Precision 
@@ -46,8 +50,8 @@ def tf_idf():
 # words = reuters.raw(file_ids[0])
 
 documents = get_docs()
-term_per_doc = {}
-for doc_id in documents.keys():
-    term_per_doc[doc_id] = term_frequency(documents[doc_id])
+# term_per_doc = {}
+# for doc_id in documents.keys():
+#     term_per_doc[doc_id] = term_frequency(documents[doc_id])
 
 # print(term_per_doc.items()) # Test
