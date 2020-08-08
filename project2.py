@@ -7,9 +7,10 @@ stop_words = set(stopwords.words("english"))
 def tokenize():
     words = []
     for word in reuters.words():
-        word.lower()
-        if word not in stop_words:
-            words.append(word)
+        w = word.lower()
+        word_tokenize(w)
+        if w not in stop_words:
+            words.append(w)
     return words
 
 print(tokenize()) #For testing purposes
