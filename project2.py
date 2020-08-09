@@ -43,9 +43,7 @@ def freq_dist(text):
 def df(term_frequency):
     doc_freq ={}
     for doc_id in term_frequency:
-        print(doc_id)
         for (word, count)in term_frequency[doc_id]:
-            print(word)
             if word in doc_freq:
                 doc_freq[word] += count
             else:
@@ -53,7 +51,14 @@ def df(term_frequency):
     return doc_freq
 
 def idf(corpus):
-    pass
+    inv_doc_freq = {}
+    N = len(corpus)
+    tf = term_frequency(corpus)
+    doc_freq = df(tf)
+    for word in doc_freq:
+        inv_doc_freq[word] = N/doc_freq[word]
+    return inv_doc_freq
+    # pass
 
 
 # TODO: TF-IDF Calc
@@ -85,9 +90,10 @@ for doc_id in sample:
 term_per_doc = term_frequency(token_sample)
 print(term_per_doc)
 doc_freq = df(term_per_doc)
-print(doc_freq)
-    # term_per_doc[doc_id] = term_frequency(documents[doc_id])
-# print(term_per_doc)
+inv_doc_freq = idf(token_sample)
+inv_doc_freq = idf(token_sample)
+print(inv_doc_freq)
+
 """
 
 """
