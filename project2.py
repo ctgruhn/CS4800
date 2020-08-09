@@ -13,7 +13,7 @@ def tokenize(document):
     tokens = word_tokenize(document)
     lemmatizer = WordNetLemmatizer()
     for word in tokens:
-        if word not in stop_words and word.isalpha():
+        if word not in stop_words and len(word) > 2:
             words.append(lemmatizer.lemmatize(word.lower()))
     return words
 
@@ -36,11 +36,34 @@ def term_frequency(corpus):
                 term_per_doc.append((word, count))
         freq_dict[doc_id] = term_per_doc
     return freq_dict
+
+def weight_tf(term_frequency):
+    weighted_terms = {}
+    for doc_id in term_frequency:
+        weight_list = []
+        _,count = zip(*term_frequency[doc_id])
+        N = sum(count)
+        for term, count in term_frequency[doc_id]:
+            weight_list.append((term, count / N))
+        weighted_terms[doc_id] = weight_list
+    print (weighted_terms)
+
 def freq_dist(text):
     freq_distribution = FreqDist(text)
     return freq_distribution
+
 # TODO: Doc freq for each term
-def df(term_frequency):
+def doc_freq_per_term(term_frequency):
+    doc_freq ={}
+    for doc_id in term_frequency:
+        for (word, count)in term_frequency[doc_id]:
+            if word in doc_freq:
+                doc_freq[word] += 1
+            else:
+                doc_freq[word] = 1
+    return doc_freq
+
+def corpus_term_freq(term_frequency):
     doc_freq ={}
     for doc_id in term_frequency:
         for (word, count)in term_frequency[doc_id]:
@@ -59,7 +82,6 @@ def idf(corpus):
         inv_doc_freq[word] = N/doc_freq[word]
     return inv_doc_freq
     # pass
-
 
 # TODO: TF-IDF Calc
 def tf_idf(doc):
@@ -89,10 +111,11 @@ for doc_id in sample:
     token_sample[doc_id] = tokenize(sample[doc_id])
 term_per_doc = term_frequency(token_sample)
 print(term_per_doc)
-doc_freq = df(term_per_doc)
+doc_freq = weight_tf(term_per_doc)
 inv_doc_freq = idf(token_sample)
 inv_doc_freq = idf(token_sample)
 print(inv_doc_freq)
+print(doc_freq)
 
 """
 
