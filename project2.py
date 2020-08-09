@@ -1,9 +1,12 @@
 import nltk
-from nltk.corpus import stopwords, reuters
+from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.probability import FreqDist
 from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer
+import glob
+import re
+import math
 
 stop_words = set(stopwords.words("english"))
 
@@ -18,13 +21,20 @@ def tokenize(document):
     return words
 
 # TODO: Separate Documents
-def get_docs():
-    documents = {}
-    for docID in reuters.fileids():
-        words = reuters.raw(docID)
-        documents[docID] = tokenize(words)
-    return documents
-
+def get_raw_docs():
+    corpus_dict = {}
+    raw_corpus = []
+    for files in glob.glob("Project2/lisa/LISA[0-9].*"):   
+        text =open(files,'r')
+        split_text = re.split('[*]+\n', text.read())
+        raw_corpus.extend(split_text) 
+    for docs in raw_corpus:
+        temp_arr = []
+        contents = re.split('(Document\s+[0-9]+)', docs)
+        doc_name = contents[1]
+        text = contents[2]
+        corpus_dict[doc_name] = tokenize(text)
+    return corpus_dict
 # TODO: Term freq w/in each doc
 def term_frequency(corpus):
     freq_dict = {}
@@ -77,14 +87,20 @@ def idf(corpus):
     inv_doc_freq = {}
     N = len(corpus)
     tf = term_frequency(corpus)
-    doc_freq = df(tf)
+    doc_freq = doc_freq_per_term(tf)
     for word in doc_freq:
-        inv_doc_freq[word] = N/doc_freq[word]
+        inv_doc_freq[word] = math.log10(N/(doc_freq[word]))
     return inv_doc_freq
-    # pass
 
 # TODO: TF-IDF Calc
-def tf_idf(doc):
+def tf_idf(weighted_tf_dict, idf_dict):
+    tf_idf_dict = {}
+    for doc_id in weighted_tf_dict:
+        for term, weight in weighted_tf_dict[doc_id]:
+            tf_idf_dict[term] = weight * idf_dict[term]
+    return tf_idf_dict
+
+def auto_tf_idf(doc):
     tfidf = TfidfVectorizer()
     text_tf = tfidf.fit_transform(doc)
     return text_tf
@@ -101,7 +117,6 @@ sample = {"doc1": "This is a sentence of a bunch of words and more words and a b
         "doc2": "A second sentence for testing purposes. This sentence has words and is about a shark for some reason.",
         "doc3":"I have a blue water bottle and two pencils. One is broken though. The other is not blue, unfortunately."
         }
-# words = reuters.raw(file_ids[0])
 
 
 """ Term Freq Test"""
@@ -110,14 +125,14 @@ token_sample = {}
 for doc_id in sample:
     token_sample[doc_id] = tokenize(sample[doc_id])
 term_per_doc = term_frequency(token_sample)
-print(term_per_doc)
+# print(term_per_doc)
 doc_freq = weight_tf(term_per_doc)
 inv_doc_freq = idf(token_sample)
-inv_doc_freq = idf(token_sample)
+# inv_doc_freq = idf(token_sample)
 print(inv_doc_freq)
-print(doc_freq)
+# print(doc_freq)
 
-"""
+# """
 
 """
 tfidf = TfidfVectorizer()
