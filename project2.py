@@ -28,10 +28,27 @@ def get_docs():
     return documents
 
 # TODO: Term freq w/in each doc
-def term_frequency(text):
+def term_frequency(corpus):
+    freq_dict = {}
+    for doc_id in corpus:
+        term_per_doc = []
+        for word in corpus[doc_id]: #not in term_per_doc:
+            count = corpus[doc_id].count(word)
+            if (word, count) not in term_per_doc:
+                term_per_doc.append((word, count))
+        freq_dict[doc_id] = term_per_doc
+    return freq_dict
+def freq_dist(text):
     freq_distribution = FreqDist(text)
     return freq_distribution
 # TODO: Doc freq for each term
+def df(term_frequency):
+    pass
+
+def idf(corpus):
+    pass
+
+
 # TODO: TF-IDF Calc
 def tf_idf(doc):
     tfidf = TfidfVectorizer()
@@ -46,12 +63,34 @@ def tf_idf(doc):
 
 
 """ Test samples """
-# sample = "This is a sentence of a bunch of words and more words and a butt plus second butt of a kind of thing and stuff love sentence."
+sample = {"doc1": "This is a sentence of a bunch of words and more words and a butt plus second butt of a kind of thing and stuff love sentence.",
+        "doc2": "A second sentence for testing purposes. This sentence has words and is about a shark for some reason.",
+        "doc3":"I have a blue water bottle and two pencils. One is broken though. The other is not blue, unfortunately."
+        }
 # words = reuters.raw(file_ids[0])
 
-documents = get_docs()
-# term_per_doc = {}
-# for doc_id in documents.keys():
-#     term_per_doc[doc_id] = term_frequency(documents[doc_id])
+
+""" Term Freq Test"""
+"""
+token_sample = {}
+for doc_id in sample:
+    token_sample[doc_id] = tokenize(sample[doc_id])
+term_per_doc = term_frequency(token_sample)
+print(term_per_doc)
+    # term_per_doc[doc_id] = term_frequency(documents[doc_id])
+# print(term_per_doc)
+"""
+
+"""
+tfidf = TfidfVectorizer()
+
+fitted_vector = tfidf.fit(documents)
+tfidf_vect = fitted_vector.transform(documents)
+
+print(tfidf_vect)
+# text_tf = tfidf.fit_transform(doc)
+
+
 
 # print(term_per_doc.items()) # Test
+"""
