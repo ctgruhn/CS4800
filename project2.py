@@ -18,8 +18,6 @@ def tokenize(document):
     return words
 
 # TODO: Separate Documents
-# print(reuters.fileids())
-#Test
 def get_docs():
     documents = {}
     for docID in reuters.fileids():
@@ -32,7 +30,7 @@ def term_frequency(corpus):
     freq_dict = {}
     for doc_id in corpus:
         term_per_doc = []
-        for word in corpus[doc_id]: #not in term_per_doc:
+        for word in corpus[doc_id]:
             count = corpus[doc_id].count(word)
             if (word, count) not in term_per_doc:
                 term_per_doc.append((word, count))
@@ -43,7 +41,16 @@ def freq_dist(text):
     return freq_distribution
 # TODO: Doc freq for each term
 def df(term_frequency):
-    pass
+    doc_freq ={}
+    for doc_id in term_frequency:
+        print(doc_id)
+        for (word, count)in term_frequency[doc_id]:
+            print(word)
+            if word in doc_freq:
+                doc_freq[word] += count
+            else:
+                doc_freq[word] = count
+    return doc_freq
 
 def idf(corpus):
     pass
@@ -77,6 +84,8 @@ for doc_id in sample:
     token_sample[doc_id] = tokenize(sample[doc_id])
 term_per_doc = term_frequency(token_sample)
 print(term_per_doc)
+doc_freq = df(term_per_doc)
+print(doc_freq)
     # term_per_doc[doc_id] = term_frequency(documents[doc_id])
 # print(term_per_doc)
 """
