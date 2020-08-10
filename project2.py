@@ -21,12 +21,13 @@ def tokenize(document):
     return words
 
 # TODO: Separate Documents
-def get_raw_docs():
+def get_docs():
     corpus_dict = {}
     raw_corpus = []
     for files in glob.glob("Project2/lisa/LISA[0-9].*"):   
         text =open(files,'r')
         split_text = re.split('[*]+\n', text.read())
+        split_text = filter(None, split_text)
         raw_corpus.extend(split_text) 
     for docs in raw_corpus:
         temp_arr = []
@@ -35,6 +36,21 @@ def get_raw_docs():
         text = contents[2]
         corpus_dict[doc_name] = tokenize(text)
     return corpus_dict
+
+def get_queries():
+    query_dict = {}
+    query_doc = open("Project2/lisa/LISA.QUE", "r")
+    doc = query_doc.read()
+    split_query = re.split('\s+#\n', doc)
+    split_query = list(filter(None, split_query))
+    for item in split_query:
+        temp_list = re.split('^\n?([0-9]+)\n', item)
+        temp_list = list(filter(None, temp_list))
+        query_id = temp_list[0]
+        text = temp_list[1]
+        query_dict[query_id] = text
+    return query_dict
+
 # TODO: Term freq w/in each doc
 def term_frequency(corpus):
     freq_dict = {}
@@ -146,4 +162,11 @@ print(tfidf_vect)
 
 
 # print(term_per_doc.items()) # Test
+"""
+
+"""
+documents = get_docs()
+print(documents)
+# query_dict = get_queries()
+# print(query_dict)
 """
