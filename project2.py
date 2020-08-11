@@ -2,11 +2,11 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.probability import FreqDist
-from nltk.stem import WordNetLemmatizer
-from sklearn.feature_extraction.text import TfidfVectorizer
+from nltk.stem import WordNetLemmatizer, PorterStemmer
 import glob
 import re
 import math
+import heapq
 
 stop_words = set(stopwords.words("english"))
 
@@ -15,9 +15,13 @@ def tokenize(document):
     words = []
     tokens = word_tokenize(document)
     lemmatizer = WordNetLemmatizer()
+    stemmer = PorterStemmer()
     for word in tokens:
         if word not in stop_words and len(word) > 2:
-            words.append(lemmatizer.lemmatize(word.lower()))
+            # lemmed = lemmatizer.lemmatize(word.lower())
+            # stemmed = stemmer.stem(lemmed)
+            # words.append(stemmed)
+            words.append(word)
     return words
 
 # TODO: Separate Documents
@@ -48,7 +52,7 @@ def get_queries():
         temp_list = list(filter(None, temp_list))
         query_id = temp_list[0]
         text = temp_list[1]
-        query_dict[query_id] = text
+        query_dict[query_id] = tokenize(text)
     return query_dict
 
 # TODO: Term freq w/in each doc
@@ -58,8 +62,8 @@ def term_frequency(corpus):
         term_per_doc = []
         for word in corpus[doc_id]:
             count = corpus[doc_id].count(word)
-            if (word, count) not in term_per_doc:
-                term_per_doc.append((word, count))
+            if (count, word) not in term_per_doc:
+                term_per_doc.append((count, word))
         freq_dict[doc_id] = term_per_doc
     return freq_dict
 
@@ -67,12 +71,12 @@ def weight_tf(term_frequency):
     weighted_terms = {}
     for doc_id in term_frequency:
         weight_list = []
-        _,count = zip(*term_frequency[doc_id])
+        count, _ = zip(*term_frequency[doc_id])
         N = sum(count)
-        for term, count in term_frequency[doc_id]:
-            weight_list.append((term, count / N))
+        for count, term in term_frequency[doc_id]:
+            weight_list.append((count / N, term))
         weighted_terms[doc_id] = weight_list
-    print (weighted_terms)
+    return weighted_terms
 
 def freq_dist(text):
     freq_distribution = FreqDist(text)
@@ -82,7 +86,7 @@ def freq_dist(text):
 def doc_freq_per_term(term_frequency):
     doc_freq ={}
     for doc_id in term_frequency:
-        for (word, count)in term_frequency[doc_id]:
+        for (count, word)in term_frequency[doc_id]:
             if word in doc_freq:
                 doc_freq[word] += 1
             else:
@@ -92,18 +96,15 @@ def doc_freq_per_term(term_frequency):
 def corpus_term_freq(term_frequency):
     doc_freq ={}
     for doc_id in term_frequency:
-        for (word, count)in term_frequency[doc_id]:
+        for (count, word)in term_frequency[doc_id]:
             if word in doc_freq:
                 doc_freq[word] += count
             else:
                 doc_freq[word] = count
     return doc_freq
 
-def idf(corpus):
+def idf(doc_freq, N):
     inv_doc_freq = {}
-    N = len(corpus)
-    tf = term_frequency(corpus)
-    doc_freq = doc_freq_per_term(tf)
     for word in doc_freq:
         inv_doc_freq[word] = math.log10(N/(doc_freq[word]))
     return inv_doc_freq
@@ -112,8 +113,11 @@ def idf(corpus):
 def tf_idf(weighted_tf_dict, idf_dict):
     tf_idf_dict = {}
     for doc_id in weighted_tf_dict:
-        for term, weight in weighted_tf_dict[doc_id]:
-            tf_idf_dict[term] = weight * idf_dict[term]
+        doc_tf_idf = {}
+        for weight, term in weighted_tf_dict[doc_id]:
+            tf_idf_value = weight * idf_dict[term]
+            doc_tf_idf[term] = weight * idf_dict[term]
+        tf_idf_dict[doc_id] = doc_tf_idf
     return tf_idf_dict
 
 def auto_tf_idf(doc):
@@ -122,9 +126,53 @@ def auto_tf_idf(doc):
     return text_tf
     
 # TODO: One more weight system
+def get_cosine(query, query_tf_idf, doc_tf_idf):
+    cos_heap = []
+    heapq.heapify(cos_heap)
+    for corpus_doc in doc_tf_idf:
+        cos_val = 0.0
+        for terms in query:
+            if terms in doc_tf_idf[corpus_doc]:
+                cos_val += (doc_tf_idf[corpus_doc][terms] * query_tf_idf[terms])
+        heapq.heappush(cos_heap, (cos_val, corpus_doc))
+    return cos_heap
+
 # TODO: Analyze Queries
+def tf_idf_retrieval(query, tf_idf):
+    rel_doc_heap = []
+    heapq.heapify(rel_doc_heap)
+    for corpus_doc in tf_idf:
+        tf_idf_val = 0.0
+        for terms in query:
+            if terms in tf_idf[corpus_doc]:
+                tf_idf_val += tf_idf[corpus_doc][terms]
+        heapq.heappush(rel_doc_heap, (tf_idf_val, corpus_doc))
+    return rel_doc_heap
+
 # TODO: Calculate Precision 
 # TODO:           & Recall
+def get_precision(tf_idf_dict, rel_dict):
+    prec_dict = {}
+    for query in tf_idf_dict:
+        TP= 0
+        for doc in rel_dict[query]:
+            print(doc)
+            if doc in tf_idf_dict[query]:
+                TP += 1
+            prec_dict[query] = TP / (10)
+
+    return prec_dict
+
+def get_recall(tf_idf_dict, rel_dict):
+    recall_dict = {}
+    for query in tf_idf_dict:
+        TP= 0
+        total_rel = len(rel_dict[query])
+        for (_, doc)in tf_idf_dict[query]:
+            if "Document {}".format(doc)  in rel_dict[query]:
+                TP += 1
+            recall_dict[query] = TP /total_rel
+    return recall_dict
 # TODO: Graph Precision & Recall
 
 
@@ -148,25 +196,64 @@ inv_doc_freq = idf(token_sample)
 print(inv_doc_freq)
 # print(doc_freq)
 
+"""
+
+# """
+# Retrieve Documents and Queries
+documents = get_docs()
+query_dict = get_queries()
+
+
+# """
+N = len(documents)
+
+# Documents TF and Weighted TF
+doc_tf = term_frequency(documents)
+query_tf = term_frequency(query_dict)
+# print("TERM FREQUENCY")
+# print(doc_tf)
+doc_weighted_tf = weight_tf(doc_tf)
+query_weighted_tf = weight_tf(query_tf)
+# print("DOCUMENT WEIGHTED TERM FREQUENCY:")
+# print(weighted_doc_tf)
+
+# Corpus DF and IDF
+doc_df = doc_freq_per_term(doc_tf)
+query_df = doc_freq_per_term(query_tf)
+# print("DOCUMENT FREQUENCY")
+# print(doc_df)
+doc_idf = idf(doc_df, N)
+query_idf = idf(query_df, N)
+# print("DOCUMENT IDF")
+# print(doc_idf)
+
+# Calculate Corpus Weights (TF-IDF)
+corpus_tf_idf = tf_idf(doc_weighted_tf, doc_idf)
+query_tf_idf = tf_idf(query_weighted_tf, query_idf)
+# print("CORPUS TF-IDF")
+# print(corpus_tf_idf)
+
+# # token_query = tokenize("I AM INTERESTED IN ALMOST ANYTHING TO DO WITH OCCUPATIONAL HEALTH INFORMATION SERVICES AVAILABLE, SUCH AS LIBRARIES. I AM INTERESTED IN BOTH OCCUPATIONAL NURSES AND OCCUPATIONAL DOCTORS. HEALTH, OCCUPATIONAL HEALTH, NURSES, DOCTORS, MEDICINE.")
+# # # # print(token_query)
+# # document_ret = tf_idf_retrieval(token_query, corpus_tf_idf)
+relevant_query_docs = {}
+# print("TOKENIZE ONLY")
+MAX_RELEVANT_DOCS = 10
+for query_id in query_dict:
+    # print("Document ID %s: %s" %(query_id, query_dict[query_id]))
+    # query_results = tf_idf_retrieval(query_dict[query_id], corpus_tf_idf)
+    query_results = get_cosine(query_dict[query_id], query_tf_idf[query_id], corpus_tf_idf)
+    # print(query_tf_idf[query_id])
+    relevant_query_docs[query_id] = heapq.nlargest(MAX_RELEVANT_DOCS, query_results)
+    print("Query %s:" %(query_id))
+    print(relevant_query_docs[query_id])
+    print()
+
+# print("TF-IDF RETRIEVAL")
+# print(relevant_query_docs)
+
+# # # print(doc_df)
+# # # print(len(doc_df))
+# # # print(len(documents))
 # """
 
-"""
-tfidf = TfidfVectorizer()
-
-fitted_vector = tfidf.fit(documents)
-tfidf_vect = fitted_vector.transform(documents)
-
-print(tfidf_vect)
-# text_tf = tfidf.fit_transform(doc)
-
-
-
-# print(term_per_doc.items()) # Test
-"""
-
-"""
-documents = get_docs()
-print(documents)
-# query_dict = get_queries()
-# print(query_dict)
-"""
